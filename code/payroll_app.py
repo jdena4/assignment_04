@@ -75,4 +75,4 @@ if upload is not None:
         file_name=f"payroll_{payroll_date}.csv",
         mime="text/csv",
         key="download",
-    )
+        )

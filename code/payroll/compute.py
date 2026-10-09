@@ -43,6 +43,7 @@ def calc_gross_pay(hours: float, rate: float) -> float:
     overtime = (hours - OVERTIME_THRESHOLD) * rate * OVERTIME_MULTIPLIER
     return round(regular + overtime, 2)
 
+
 def classify_pay(hours: float, rate: float) -> str:
     """One word the office manager can filter on: what kind of pay row is this?
 
@@ -78,7 +79,10 @@ def add_gross_pay(payroll: pd.DataFrame) -> pd.DataFrame:
 def add_pay_type(payroll: pd.DataFrame) -> pd.DataFrame:
     """Return a copy with one new column, `pay_type`: `classify_pay` for every row."""
     out = payroll.copy()
-    out["pay_type"] = out.apply(lambda row: classify_pay(row["hours_worked"], row["hourly_rate_usd"]), axis=1)
+    out["pay_type"] = out.apply(
+        lambda row: classify_pay(row["hours_worked"], row["hourly_rate_usd"]),
+        axis=1,
+    )
     return out
 
 
