@@ -38,10 +38,10 @@ def calc_gross_pay(hours: float, rate: float) -> float:
         return 0.0
 
     if hours <= OVERTIME_THRESHOLD:
-        return hours * rate
-
-    return (OVERTIME_THRESHOLD * rate) + ((hours - OVERTIME_THRESHOLD) * rate * OVERTIME_MULTIPLIER)
-
+        return round(hours * rate, 2)
+    regular = OVERTIME_THRESHOLD * rate
+    overtime = (hours - OVERTIME_THRESHOLD) * rate * OVERTIME_MULTIPLIER
+    return round(regular + overtime, 2)
 
 def classify_pay(hours: float, rate: float) -> str:
     """One word the office manager can filter on: what kind of pay row is this?
@@ -69,7 +69,9 @@ def add_gross_pay(payroll: pd.DataFrame) -> pd.DataFrame:
         lambda row: calc_gross_pay(row["hours_worked"], row["hourly_rate_usd"])
     """
     out = payroll.copy()
-    out["gross_pay"] = out.apply(lambda row: calc_gross_pay(row["hours_worked"], row["hourly_rate_usd"]), axis=1)
+    out["gross_pay"] = out.apply(
+        lambda row: calc_gross_pay(row["hours_worked"], row["hourly_rate_usd"]),
+        axis=1,)
     return out
 
 
@@ -90,7 +92,7 @@ def build_payroll(timesheet: pd.DataFrame, employees: pd.DataFrame) -> pd.DataFr
     """
     timesheet = add_hours_worked(timesheet)
     employees = add_hourly_rate(employees)
-    payroll = pd.merge(timesheet, employees, on="employee_id", how="left")
+    payroll = merge_employees(timesheet, employees)
     payroll = add_gross_pay(payroll)
     payroll = add_pay_type(payroll)
     return payroll
@@ -112,4 +114,11 @@ def payroll_export(payroll: pd.DataFrame) -> pd.DataFrame:
     pipeline's columns. The pipeline table keeps its lineage; the export is a
     view of it shaped for someone else's system.
     """
-    return payroll[payroll["pay_type"] != "unmatched"].copy()
+    payable = payroll[payroll["pay_type"] != "unmatched"]
+    return pd.DataFrame({
+        "payrolldate": payable["payroll_date"],
+        "employeeid": payable["employee_id"],
+        "hours": payable["hours_worked"],
+        "rate": payable["hourly_rate_usd"],
+        "total": payable["gross_pay"]
+    })
